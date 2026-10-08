@@ -315,9 +315,13 @@ class HostVerificationController extends GetxController {
     log("Nick Name: ${nickNameController.text}");
     log("Self Introduction: ${introCnt.text}");
     log("Talk Topic: ${talkTopic[selectedTopic].name.toString()}");
-    log("User ID: ${Database.loginUserFirebaseId}");
+    log("User ID: ${Database.loginUserId}");
     log("Age: ${ageController.text}");
     log("Gender ::: ${genderCnt.text}");
+
+    final loggedInUid = Database.loginUserId.isNotEmpty
+        ? Database.loginUserId
+        : (Database.fetchLoginUserProfileModel?.user?.id ?? Database.loginUserFirebaseId);
 
     becomeHostModel = await BecomeHostApi.callApi(
       experience: experienceCnt.text,
@@ -332,7 +336,7 @@ class HostVerificationController extends GetxController {
       nickName: nickNameController.text,
       selfIntro: introCnt.text,
       talkTopic: selectedTopics.map((i) => talkTopic[i].name).join(', '),
-      uid: Database.loginUserFirebaseId,
+      uid: loggedInUid,
       age: ageController.text,
       gender: genderCnt.text,
       country: countryCnt.text,
@@ -351,7 +355,7 @@ class HostVerificationController extends GetxController {
       ),
     );
 
-    listenersRequestCheckModel = await ListenersRequestCheckApi.callApi();
+    listenersRequestCheckModel = await ListenersRequestCheckApi.callApi(uid: loggedInUid);
 
     // Utils.showToast(Get.context!, becomeHostModel?.message ?? "");
   }

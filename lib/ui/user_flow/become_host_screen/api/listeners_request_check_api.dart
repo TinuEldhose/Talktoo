@@ -6,20 +6,34 @@ import 'package:talk_in/ui/user_flow/become_host_screen/model/listeners_request_
 import 'package:talk_in/utils/api.dart';
 import 'package:talk_in/utils/api_params.dart';
 import 'package:talk_in/utils/database.dart';
-import 'package:talk_in/utils/firebse_access_token.dart';
 import 'package:talk_in/utils/utils.dart';
 
 class ListenersRequestCheckApi {
-  static Future<ListenersRequestCheckModel?> callApi() async {
+  static Future<ListenersRequestCheckModel?> callApi({String? uid}) async {
     Utils.showLog("Listeners Request check Api Calling...");
 
+    final String userId = (uid != null && uid.isNotEmpty)
+        ? uid
+        : (Database.loginUserId.isNotEmpty
+            ? Database.loginUserId
+            : (Database.fetchLoginUserProfileModel?.user?.id ?? ""));
+
+    Utils.showLog("Listeners Request check Api UID :: $userId");
+
+    if (userId.isEmpty) {
+      Utils.showLog("Listeners Request check Api: No valid loginUserId found");
+      return ListenersRequestCheckModel(
+        status: false,
+        message: "Request not found for that user!",
+      );
+    }
 
     final uri = Uri.parse(Api.listenersRequestCheck);
 
     final headers = {
       ApiParams.key: Api.secretKey,
       ApiParams.authToken: "Bearer ${Api.secretKey}",
-      ApiParams.authUid: Database.loginUserId,
+      ApiParams.authUid: userId,
       ApiParams.contentType: "application/json",
     };
     Utils.showLog("Listeners Request check Api uri :: $uri");
@@ -34,11 +48,19 @@ class ListenersRequestCheckApi {
         final jsonResponse = json.decode(response.body);
         return ListenersRequestCheckModel.fromJson(jsonResponse);
       } else {
-        throw Exception('Status code is not 200');
+        Utils.showLog("Listeners Request check API status code :: ${response.statusCode}");
+        return ListenersRequestCheckModel(
+          status: false,
+          message: "Request not found for that user!",
+        );
       }
     } catch (e) {
-      log("Listeners Request check :: $e");
+      log("Listeners Request check error :: $e");
+      return ListenersRequestCheckModel(
+        status: false,
+        message: "Request not found for that user!",
+      );
     }
-    return null;
   }
 }
+
