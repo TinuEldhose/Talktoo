@@ -175,15 +175,21 @@ class FillProfileScreenController extends GetxController {
 
   /// fill profile api
   Future<void> callEditApi({String? image}) async {
-
     log('Database.countryCode  ::::  ${Database.selectedCountryCode}');
+    final uidToUse = (Database.fetchLoginUserProfileModel?.user?.id != null &&
+            Database.fetchLoginUserProfileModel!.user!.id!.isNotEmpty)
+        ? Database.fetchLoginUserProfileModel!.user!.id!
+        : (Database.loginUserId.isNotEmpty
+            ? Database.loginUserId
+            : Database.loginUserFirebaseId);
+
     editProfileModel = await EditProfileApi.callApi(
-      country: countryController.text,
-      countryFlag: flagController.text,
-      countryCode: Database.selectedCountryCode,
-      uid: Database.loginUserId,          // ← was loginUserFirebaseId
+      country: countryController.text.isNotEmpty ? countryController.text : (Database.country.isNotEmpty ? Database.country : "India"),
+      countryFlag: flagController.text.isNotEmpty ? flagController.text : (Database.countryFlag.isNotEmpty ? Database.countryFlag : "🇮🇳"),
+      countryCode: Database.selectedCountryCode.isNotEmpty ? Database.selectedCountryCode : "IN",
+      uid: uidToUse,
       birthDate: dateController.text,
-      image: pickImage == "" ? photo : pickImage,
+      image: (pickImage != null && pickImage!.isNotEmpty) ? pickImage : photo,
       nickName: nickNameController.text,
       gender: Database.loginUserGender,
       phoneNumber: numberController.text,
@@ -193,31 +199,32 @@ class FillProfileScreenController extends GetxController {
 
     if (editProfileModel?.status == true) {
       fetchLoginUserProfileModel = await FetchLoginUserProfileApi.callApi(
-        loginUserId: Database.loginUserId,    // ← was loginUserFirebaseId
-        token: Api.secretKey,                 // ← was token ?? ''
+        loginUserId: uidToUse,
+        token: Api.secretKey,
       );
-      Database.fetchLoginUserProfileModel =
-          fetchLoginUserProfileModel;
+      if (fetchLoginUserProfileModel != null) {
+        Database.fetchLoginUserProfileModel = fetchLoginUserProfileModel;
 
-      // Update all local database fields
-      Database.onSetLoginUserProfilePic(
-          fetchLoginUserProfileModel?.user?.profilePic ?? "");
-      Database.onSetLoginUserName(
-          fetchLoginUserProfileModel!.user!.fullName!);
-      Database.onSetLoginUserNickName(
-          fetchLoginUserProfileModel?.user?.nickName ?? "");
-      Database.onSetLoginUserEmail(
-          fetchLoginUserProfileModel!.user!.email!);
-      Database.onSetLoginUserCountry(
-          fetchLoginUserProfileModel!.user!.country!);
-      Database.onSetLoginUserCountryFlag(
-          fetchLoginUserProfileModel!.user!.countryFlag!);
-      Database.onSetLoginUserBirthDate(
-          fetchLoginUserProfileModel?.user?.birthDate ?? "");
-      Database.onSetLoginUserGender(
-          fetchLoginUserProfileModel?.user?.gender ?? "Male");
-      Database.onSetLoginUserPhoneNumber(
-          fetchLoginUserProfileModel?.user?.phoneNumber ?? "");
+        // Update all local database fields
+        Database.onSetLoginUserProfilePic(
+            fetchLoginUserProfileModel?.user?.profilePic ?? "");
+        Database.onSetLoginUserName(
+            fetchLoginUserProfileModel?.user?.fullName ?? nameController.text);
+        Database.onSetLoginUserNickName(
+            fetchLoginUserProfileModel?.user?.nickName ?? nickNameController.text);
+        Database.onSetLoginUserEmail(
+            fetchLoginUserProfileModel?.user?.email ?? emailController.text);
+        Database.onSetLoginUserCountry(
+            fetchLoginUserProfileModel?.user?.country ?? countryController.text);
+        Database.onSetLoginUserCountryFlag(
+            fetchLoginUserProfileModel?.user?.countryFlag ?? flagController.text);
+        Database.onSetLoginUserBirthDate(
+            fetchLoginUserProfileModel?.user?.birthDate ?? dateController.text);
+        Database.onSetLoginUserGender(
+            fetchLoginUserProfileModel?.user?.gender ?? Database.loginUserGender);
+        Database.onSetLoginUserPhoneNumber(
+            fetchLoginUserProfileModel?.user?.phoneNumber ?? numberController.text);
+      }
 
       // Mark profile complete so banner disappears on home
       Database.onSetFillProfile(true);
@@ -247,8 +254,8 @@ class FillProfileScreenController extends GetxController {
       }
     } else {
       if (Get.isDialogOpen ?? false) Get.back();
-      Utils.showToast(
-          Get.context!, EnumLocale.txtSomeThingWentWrong.name.tr);
+      final errorMessage = editProfileModel?.message ?? EnumLocale.txtSomeThingWentWrong.name.tr;
+      Utils.showToast(Get.context!, errorMessage);
     }
   }
 

@@ -205,65 +205,64 @@ class EditProfileController extends GetxController {
     debugPrint("phoneNumber: ${mobileNumberCnt.text}");
     debugPrint("fullName: ${nameCnt.text}");
 
+    final uidToUse = (Database.fetchLoginUserProfileModel?.user?.id != null &&
+            Database.fetchLoginUserProfileModel!.user!.id!.isNotEmpty)
+        ? Database.fetchLoginUserProfileModel!.user!.id!
+        : (Database.loginUserId.isNotEmpty
+            ? Database.loginUserId
+            : Database.loginUserFirebaseId);
+
     editProfileModel = await EditProfileApi.callApi(
-      country: countryController.text,
-      countryFlag: flagController.text,
-      countryCode: Database.selectedCountryCode,
-      uid: Database.loginUserId,
+      country: countryController.text.isNotEmpty ? countryController.text : (Database.country.isNotEmpty ? Database.country : "India"),
+      countryFlag: flagController.text.isNotEmpty ? flagController.text : (Database.countryFlag.isNotEmpty ? Database.countryFlag : "🇮🇳"),
+      countryCode: Database.selectedCountryCode.isNotEmpty ? Database.selectedCountryCode : "IN",
+      uid: uidToUse,
       birthDate: dateController.text,
-      image: pickImage == "" ? profilePic : pickImage,
+      image: (pickImage != null && pickImage!.isNotEmpty) ? pickImage : profilePic,
       nickName: nickNameCnt.text,
       gender: Database.loginUserGender,
       phoneNumber: mobileNumberCnt.text,
       fullName: nameCnt.text,
+      email: emailCnt.text,
     );
-
-    debugPrint("Calling EditProfileApi with following data:");
-    debugPrint("country: ${countryController.text}");
-    debugPrint("countryFlag: ${flagController.text}");
-    debugPrint("countryCode: ${Database.selectedCountryCode}");
-    debugPrint("uid: ${Database.loginUserFirebaseId}");
-    debugPrint("birthDate: ${dateController.text}");
-    debugPrint("image: ${pickImage == "" ? profilePic : pickImage}");
-    debugPrint("nickName: ${nickNameCnt.text}");
-    debugPrint("gender: ${Database.loginUserGender}");
-    debugPrint("phoneNumber: ${mobileNumberCnt.text}");
-    debugPrint("fullName: ${nameCnt.text}");
 
     if (editProfileModel?.status == true) {
       Utils.showToast(
           Get.context!, EnumLocale.txtProfileUpdateSuccessfully.name.tr);
       fetchLoginUserProfileModel = await FetchLoginUserProfileApi.callApi(
-          loginUserId: Database.loginUserId, token: Api.secretKey ?? '');
+          loginUserId: uidToUse, token: Api.secretKey);
 
-      Database.onSetLoginUserProfilePic(
-          fetchLoginUserProfileModel?.user?.profilePic ?? "");
-      Database.onSetLoginUserName(fetchLoginUserProfileModel!.user!.fullName!);
-      Database.onSetLoginUserNickName(
-          fetchLoginUserProfileModel?.user?.nickName ?? "");
-      Database.onSetLoginUserEmail(fetchLoginUserProfileModel!.user!.email!);
-      Database.onSetLoginUserCountry(
-          fetchLoginUserProfileModel!.user!.country!);
-      Database.onSetLoginUserCountryFlag(
-          fetchLoginUserProfileModel!.user!.countryFlag!);
-      Database.onSetLoginUserBirthDate(
-          fetchLoginUserProfileModel?.user?.birthDate ?? "");
-      Database.onSetLoginUserGender(
-          fetchLoginUserProfileModel?.user?.gender ?? "Male");
-      Database.onSetLoginUserPhoneNumber(
-          fetchLoginUserProfileModel?.user?.phoneNumber ?? "");
-      Database.fetchLoginUserProfileModel = fetchLoginUserProfileModel;
+      if (fetchLoginUserProfileModel != null) {
+        Database.onSetLoginUserProfilePic(
+            fetchLoginUserProfileModel?.user?.profilePic ?? "");
+        Database.onSetLoginUserName(
+            fetchLoginUserProfileModel?.user?.fullName ?? nameCnt.text);
+        Database.onSetLoginUserNickName(
+            fetchLoginUserProfileModel?.user?.nickName ?? nickNameCnt.text);
+        Database.onSetLoginUserEmail(
+            fetchLoginUserProfileModel?.user?.email ?? emailCnt.text);
+        Database.onSetLoginUserCountry(
+            fetchLoginUserProfileModel?.user?.country ?? countryController.text);
+        Database.onSetLoginUserCountryFlag(
+            fetchLoginUserProfileModel?.user?.countryFlag ?? flagController.text);
+        Database.onSetLoginUserBirthDate(
+            fetchLoginUserProfileModel?.user?.birthDate ?? dateController.text);
+        Database.onSetLoginUserGender(
+            fetchLoginUserProfileModel?.user?.gender ?? Database.loginUserGender);
+        Database.onSetLoginUserPhoneNumber(
+            fetchLoginUserProfileModel?.user?.phoneNumber ?? mobileNumberCnt.text);
+        Database.fetchLoginUserProfileModel = fetchLoginUserProfileModel;
+      }
 
       update([Constant.idProfile]);
 
-      Get.close(2);
-      fetchLoginUserProfileModel = await FetchLoginUserProfileApi.callApi(
-          loginUserId: Database.loginUserId, token: Api.secretKey ?? '');
-      Database.fetchLoginUserProfileModel = fetchLoginUserProfileModel;
-
+      if (Get.isDialogOpen ?? false) Get.back();
+      Get.back();
       update();
     } else {
-      Utils.showToast(Get.context!, EnumLocale.txtSomeThingWentWrong.name.tr);
+      if (Get.isDialogOpen ?? false) Get.back();
+      final errorMessage = editProfileModel?.message ?? EnumLocale.txtSomeThingWentWrong.name.tr;
+      Utils.showToast(Get.context!, errorMessage);
     }
   }
 

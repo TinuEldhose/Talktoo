@@ -20,7 +20,7 @@
 // android/build.gradle
 
     buildscript {
-        ext.kotlin_version = '2.1.0' // ✅ Use the latest stable version
+        ext.kotlin_version = '2.1.0'
 
         repositories {
             google()

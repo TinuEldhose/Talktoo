@@ -28,7 +28,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a"
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86_64"
         }
     }
 
@@ -50,7 +50,7 @@ android {
         release {
             keyAlias "talkin"
             keyPassword "talkin@123"
-            storeFile file("D:\\IShionTech\\App\\release.jks")
+            storeFile file("release.jks")
             storePassword "talkin@123"
         }
     }
