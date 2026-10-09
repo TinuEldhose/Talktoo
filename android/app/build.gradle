@@ -5,6 +5,12 @@ plugins {
     id "com.google.gms.google-services"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.ishvion.talktoo"
     compileSdk = 36
@@ -48,10 +54,17 @@ android {
 
     signingConfigs {
         release {
-            keyAlias "talkin"
-            keyPassword "talkin@123"
-            storeFile file("release.jks")
-            storePassword "talkin@123"
+            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            } else {
+                keyAlias "talkin"
+                keyPassword "talkin@123"
+                storeFile file("release.jks")
+                storePassword "talkin@123"
+            }
         }
     }
 
